@@ -1,0 +1,53 @@
+name: smart-cart
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: cart
+      POSTGRES_PASSWORD: cart
+      POSTGRES_DB: cart_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cart -d cart_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  valkey:
+    image: valkey/valkey:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "valkey-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  cart-service:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    depends_on:
+      postgres:
+        condition: service_healthy
+      valkey:
+        condition: service_healthy
+    environment:
+      HTTP_ADDR: ":8080"
+      POSTGRES_DSN: "postgres://cart:cart@postgres:5432/cart_db?sslmode=disable"
+      REDIS_ADDR: "valkey:6379"
+      REDIS_DB: "0"
+      CART_CACHE_TTL: "24h"
+      ENRICHMENT_TIMEOUT: "2s"
+      SHUTDOWN_TIMEOUT: "10s"
+      LOG_LEVEL: "info"
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+
+volumes:
+  pg_data:

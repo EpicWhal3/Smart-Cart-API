@@ -1,0 +1,15 @@
+# Артефакты сборки и служебные файлы, не нужные в образе.
+.git
+.gitignore
+*.md
+deploy/
+Dockerfile
+.dockerignore
+bin/
+dist/
+*.out
+coverage.out
+.env
+.env.*
+.idea/
+.vscode/
